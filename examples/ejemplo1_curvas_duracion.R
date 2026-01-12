@@ -7,14 +7,62 @@
 # Limpiar workspace
 rm(list = ls())
 
-# Configurar directorio base (directorio padre del script)
-if (interactive()) {
-  setwd(dirname(dirname(rstudioapi::getActiveDocumentContext()$path)))
-} else {
-  # Cuando se ejecuta con Rscript, ir al directorio padre
-  script_dir <- dirname(sys.frame(1)$ofile)
-  setwd(file.path(script_dir, ".."))
+# ============================================================================
+# Configurar directorio base - Compatible con múltiples formas de ejecución
+# ============================================================================
+
+# Función para encontrar el directorio raíz del proyecto
+find_project_root <- function() {
+  # Método 1: Si se ejecuta con Rscript
+  args <- commandArgs(trailingOnly = FALSE)
+  file_arg <- grep("^--file=", args, value = TRUE)
+  
+  if (length(file_arg) > 0) {
+    # Obtener path del script
+    script_path <- normalizePath(sub("^--file=", "", file_arg))
+    script_dir <- dirname(script_path)
+    
+    # Si estamos en examples/, subir un nivel
+    if (basename(script_dir) == "examples") {
+      return(dirname(script_dir))
+    } else {
+      return(script_dir)
+    }
+  }
+  
+  # Método 2: Modo interactivo - buscar config.R
+  current_dir <- getwd()
+  
+  # Si estamos en examples/, subir un nivel
+  if (basename(current_dir) == "examples") {
+    parent_dir <- dirname(current_dir)
+    if (file.exists(file.path(parent_dir, "config.R"))) {
+      return(parent_dir)
+    }
+  }
+  
+  # Si ya estamos en el directorio correcto
+  if (file.exists(file.path(current_dir, "config.R"))) {
+    return(current_dir)
+  }
+  
+  # Buscar hacia arriba hasta encontrar config.R
+  search_dir <- current_dir
+  for (i in 1:3) {  # Buscar hasta 3 niveles arriba
+    if (file.exists(file.path(search_dir, "config.R"))) {
+      return(search_dir)
+    }
+    search_dir <- dirname(search_dir)
+  }
+  
+  stop("No se pudo encontrar el directorio del proyecto (config.R no encontrado)")
 }
+
+# Establecer directorio de trabajo
+project_root <- find_project_root()
+setwd(project_root)
+
+cat(sprintf("\n✓ Directorio de trabajo: %s\n\n", getwd()))
 
 # Cargar configuración y módulos
 source("config.R")

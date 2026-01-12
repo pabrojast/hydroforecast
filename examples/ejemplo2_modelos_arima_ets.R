@@ -7,13 +7,51 @@
 # Limpiar workspace
 rm(list = ls())
 
-# Configurar directorio base
-if (interactive()) {
-  setwd(dirname(dirname(rstudioapi::getActiveDocumentContext()$path)))
-} else {
-  script_dir <- dirname(sys.frame(1)$ofile)
-  setwd(file.path(script_dir, ".."))
+# ============================================================================
+# Configurar directorio base - Compatible con múltiples formas de ejecución
+# ============================================================================
+
+find_project_root <- function() {
+  args <- commandArgs(trailingOnly = FALSE)
+  file_arg <- grep("^--file=", args, value = TRUE)
+  
+  if (length(file_arg) > 0) {
+    script_path <- normalizePath(sub("^--file=", "", file_arg))
+    script_dir <- dirname(script_path)
+    if (basename(script_dir) == "examples") {
+      return(dirname(script_dir))
+    } else {
+      return(script_dir)
+    }
+  }
+  
+  current_dir <- getwd()
+  if (basename(current_dir) == "examples") {
+    parent_dir <- dirname(current_dir)
+    if (file.exists(file.path(parent_dir, "config.R"))) {
+      return(parent_dir)
+    }
+  }
+  
+  if (file.exists(file.path(current_dir, "config.R"))) {
+    return(current_dir)
+  }
+  
+  search_dir <- current_dir
+  for (i in 1:3) {
+    if (file.exists(file.path(search_dir, "config.R"))) {
+      return(search_dir)
+    }
+    search_dir <- dirname(search_dir)
+  }
+  
+  stop("No se pudo encontrar el directorio del proyecto (config.R no encontrado)")
 }
+
+project_root <- find_project_root()
+setwd(project_root)
+
+cat(sprintf("\n✓ Directorio de trabajo: %s\n\n", getwd()))
 
 # Cargar configuración y módulos
 source("config.R")
