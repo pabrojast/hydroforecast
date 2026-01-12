@@ -1,0 +1,23 @@
+# R específico
+.Rhistory
+.RData
+.Rproj.user
+*.Rproj
+
+# Datos (opcional - descomentar si no quieres versionar datos)
+# data/*.csv
+# data/*.xlsx
+
+# Salidas generadas
+output/*.csv
+plots/*.png
+plots/*.pdf
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Temporales
+*.tmp
+*.bak
+*~
